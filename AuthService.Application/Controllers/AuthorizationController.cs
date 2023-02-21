@@ -24,14 +24,19 @@ namespace AuthService.Application.Controllers
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IConfiguration _iconfiguration;
+        private IOpenIddictTokenManager _tokenManager;
+
 
         public AuthorizationController(
             UserManager<IdentityUser> userManager, 
             IConfiguration iconfiguration,
-            SignInManager<IdentityUser> signInManager
+            SignInManager<IdentityUser> signInManager,
+             IOpenIddictTokenManager tokenManager
+
         ){
             _signInManager = signInManager;
             _userManager = userManager;
+            _tokenManager = tokenManager;
         }
                 
         [HttpPost("~/connect/token"), Produces("application/json")]
@@ -118,56 +123,56 @@ namespace AuthService.Application.Controllers
         }
         
         
-        [Route("/connect/logout")]
-        [HttpGet, HttpPost]
-        public async Task<string> Logout()
-        {
-            bool before = _signInManager.IsSignedIn(HttpContext.User);
-            
-            // await _signInManager.SignOutAsync();
-            // await _signInManager.SignOutAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-
-            await HttpContext.SignOutAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-            // SignOut(  
-            //     authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,  
-            //     properties: new AuthenticationProperties  
-            //     {  
-            //         RedirectUri = "/"  
-            //     });  
-
-            bool after = _signInManager.IsSignedIn(User);
-
-
-            return before.ToString() + "  " + after.ToString();
-        }
-        
-        
         // [Route("/connect/logout")]
         // [HttpGet, HttpPost]
         // public async Task<string> Logout()
         // {
-        //     //Get Bearer token
-        //     string bearerToken = HttpContext.Request.Headers["Authorization"]
-        //         .FirstOrDefault(header => header.StartsWith("Bearer "))?.Substring("Bearer ".Length);
+        //     bool before = _signInManager.IsSignedIn(HttpContext.User);
         //     
-        //     
-        //     ClaimsPrincipal user = HttpContext.User;
-        //     
-        //     //Revoking by authorization id
-        //     var auth_id = user.GetClaim("oi_au_id");
-        //     
-        //     await foreach (var token1 in  _tokenManager.FindByAuthorizationIdAsync(auth_id))
-        //     {
-        //         await _tokenManager.TryRevokeAsync(token1);
-        //     }
-        //    
-        //     //Revoking by token Id
-        //     // var token_id = user.GetClaim("oi_tkn_id");
-        //     // var token = await _tokenManager.FindByIdAsync(token_id);
-        //     // await _tokenManager.TryRevokeAsync(token);
+        //     // await _signInManager.SignOutAsync();
+        //     // await _signInManager.SignOutAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         //
-        //     return bearerToken;
+        //     await HttpContext.SignOutAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        //     // SignOut(  
+        //     //     authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,  
+        //     //     properties: new AuthenticationProperties  
+        //     //     {  
+        //     //         RedirectUri = "/"  
+        //     //     });  
+        //
+        //     bool after = _signInManager.IsSignedIn(User);
+        //
+        //
+        //     return before.ToString() + "  " + after.ToString();
         // }
+        
+        
+        [Route("/connect/logout")]
+        [HttpGet, HttpPost]
+        public async Task<string> Logout()
+        {
+            //Get Bearer token
+            string bearerToken = HttpContext.Request.Headers["Authorization"]
+                .FirstOrDefault(header => header.StartsWith("Bearer "))?.Substring("Bearer ".Length);
+            
+            
+            ClaimsPrincipal user = HttpContext.User;
+            
+            //Revoking by authorization id
+            var auth_id = user.GetClaim("oi_au_id");
+            
+            await foreach (var token1 in  _tokenManager.FindByAuthorizationIdAsync(auth_id))
+            {
+                await _tokenManager.TryRevokeAsync(token1);
+            }
+           
+            //Revoking by token Id
+            // var token_id = user.GetClaim("oi_tkn_id");
+            // var token = await _tokenManager.FindByIdAsync(token_id);
+            // await _tokenManager.TryRevokeAsync(token);
+        
+            return bearerToken;
+        }
         
         private IEnumerable<string> GetDestinations(Claim claim, ClaimsPrincipal principal)
         {   
@@ -203,7 +208,7 @@ namespace AuthService.Application.Controllers
 
                     yield break;
 
-                case "dewdwe":
+                case "key1":
                     yield return Destinations.AccessToken;
 
                     // if (principal.HasScope(Scopes.Roles))
